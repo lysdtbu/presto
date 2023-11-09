@@ -596,9 +596,9 @@ class TaskManagerTest : public testing::Test {
   }
 
   void initNodeConfig(
-      ConfigBase& config,
+      NodeConfig* config,
       std::unordered_map<std::string, std::string> properties) {
-    config.initialize(std::make_unique<core::MemConfig>(std::move(properties)));
+    config->initialize(std::make_unique<core::MemConfig>(std::move(properties)));
   }
 
   std::shared_ptr<memory::MemoryPool> rootPool_;
@@ -1039,7 +1039,7 @@ TEST_F(TaskManagerTest, aggregationSpill) {
 }
 
 TEST_F(TaskManagerTest, buildTaskSpillDirectoryPath) {
-  NodeConfig config;
+  auto config = NodeConfig::instance();
   initNodeConfig(
       config,
       {{std::string(NodeConfig::kNodeInternalAddress), "192.168.10.2"},
@@ -1047,11 +1047,11 @@ TEST_F(TaskManagerTest, buildTaskSpillDirectoryPath) {
   EXPECT_EQ(
       "fs::/base/presto_native/192.168.10.2_19/2022-12-20/20221220-Q/Task1/",
       TaskManager::buildTaskSpillDirectoryPath(
-          "fs::/base", &config, "20221220-Q", "Task1", true));
+          "fs::/base", "20221220-Q", "Task1", true));
   EXPECT_EQ(
       "fs::/base/presto_native/2022-12-20/20221220-Q/Task1/",
       TaskManager::buildTaskSpillDirectoryPath(
-          "fs::/base", &config, "20221220-Q", "Task1", false));
+          "fs::/base", "20221220-Q", "Task1", false));
 
   initNodeConfig(
       config,
@@ -1060,24 +1060,24 @@ TEST_F(TaskManagerTest, buildTaskSpillDirectoryPath) {
   EXPECT_EQ(
       "fsx::/root/presto_native/192.16.10.2_sample_node_id/1970-01-01/Q100/Task22/",
       TaskManager::buildTaskSpillDirectoryPath(
-          "fsx::/root", &config, "Q100", "Task22", true));
+          "fsx::/root", "Q100", "Task22", true));
   EXPECT_EQ(
       "fsx::/root/presto_native/1970-01-01/Q100/Task22/",
       TaskManager::buildTaskSpillDirectoryPath(
-          "fsx::/root", &config, "Q100", "Task22", false));
+          "fsx::/root", "Q100", "Task22", false));
 
   initNodeConfig(
       config, {{std::string(NodeConfig::kNodeId), "sample_node_id"}});
   EXPECT_EQ(
       fmt::format(
           "fsx::/root/presto_native/{}_sample_node_id/1970-01-01/Q100/Task22/",
-          config.getLocalIp()),
+          config->getLocalIp()),
       TaskManager::buildTaskSpillDirectoryPath(
-          "fsx::/root", &config, "Q100", "Task22", true));
+          "fsx::/root", "Q100", "Task22", true));
   EXPECT_EQ(
       "fsx::/root/presto_native/1970-01-01/Q100/Task22/",
       TaskManager::buildTaskSpillDirectoryPath(
-          "fsx::/root", &config, "Q100", "Task22", false));
+          "fsx::/root", "Q100", "Task22", false));
 }
 
 TEST_F(TaskManagerTest, getDataOnAbortedTask) {
